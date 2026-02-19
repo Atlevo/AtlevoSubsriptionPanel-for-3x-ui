@@ -1,0 +1,10 @@
+version: '3.8'
+services:
+  atlevo-manager:
+    build: .
+    container_name: atlevo-sub-manager
+    ports:
+      - "8081:8501"
+    volumes:
+      - /etc/x-ui/x-ui.db:/etc/x-ui/x-ui.db:rw
+    restart: always
