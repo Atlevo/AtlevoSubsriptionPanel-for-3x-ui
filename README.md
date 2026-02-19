@@ -69,7 +69,7 @@ install.sh	Скрипт автоматической установки
 
     Порты: Убедитесь, что порт 8081 открыт в вашем фаерволе (UFW/iptables).
 
-Вот англоязычная версия твоего гайда для GitHub. Она звучит профессионально, но сохраняет тот самый драйвовый вайб.
+
 🚀 Atlevo Subscription Panel for 3x-ui
 
 Pure "Vibe Coding" in action. Created out of a desire to automate user management in 3x-ui, especially when dealing with a large number of inbounds.
