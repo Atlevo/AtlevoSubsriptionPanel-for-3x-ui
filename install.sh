@@ -1,49 +1,60 @@
 #!/bin/bash
 
-# Цвета для красоты в терминале
+# Цвета для терминала
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+RED='\033[0;31m'
 NC='\033[0m'
 
-echo -e "${GREEN}>>> Запуск установки Atlevo Subscription Panel...${NC}"
+echo -e "${GREEN}>>> Начинаем установку Atlevo Subscription Panel...${NC}"
 
-# 1. Проверка Docker
+# 1. Проверка на root
+if [ "$EUID" -ne 0 ]; then
+  echo -e "${RED}Ошибка: Запустите скрипт от имени root (sudo -i)${NC}"
+  exit 1
+fi
+
+# 2. Установка зависимостей (Docker и Docker Compose)
 if ! command -v docker &> /dev/null; then
     echo -e "${YELLOW}Docker не найден. Устанавливаем...${NC}"
     curl -fsSL https://get.docker.com | sh
+    systemctl enable --now docker
 fi
 
-# 2. Проверка Docker Compose
-if ! command -v docker-compose &> /dev/null; then
+if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
     echo -e "${YELLOW}Docker Compose не найден. Устанавливаем...${NC}"
     apt update && apt install docker-compose -y
 fi
 
-# 3. Подготовка папки проекта
+# 3. Создание структуры папок
 mkdir -p /root/sub-panel
 cd /root/sub-panel
 
-# 4. Скачивание файлов из твоего GitHub
-echo -e "${GREEN}>>> Загрузка файлов из репозитория Atlevo...${NC}"
-REPO_URL="https://raw.githubusercontent.com/Atlevo/AtlevoSubsriptionPanel-for-3x-ui/main"
+# 4. Скачивание файлов напрямую из твоего GitHub (Raw ссылки)
+echo -e "${GREEN}>>> Скачивание компонентов панели...${NC}"
+BASE_URL="https://raw.githubusercontent.com/Atlevo/AtlevoSubsriptionPanel-for-3x-ui/main"
 
-curl -sL "$REPO_URL/sub_manager.py" -o sub_manager.py
-curl -sL "$REPO_URL/Dockerfile" -o Dockerfile
-curl -sL "$REPO_URL/docker-compose.yml" -o docker-compose.yml
-curl -sL "$REPO_URL/requirements.txt" -o requirements.txt
+curl -sL "$BASE_URL/sub_manager.py" -o sub_manager.py
+curl -sL "$BASE_URL/Dockerfile" -o Dockerfile
+curl -sL "$BASE_URL/docker-compose.yml" -o docker-compose.yml
+curl -sL "$BASE_URL/requirements.txt" -o requirements.txt
 
 # 5. Сборка и запуск контейнера
-echo -e "${GREEN}>>> Сборка Docker-образа и запуск...${NC}"
-docker-compose up -d --build
+echo -e "${GREEN}>>> Сборка и запуск в Docker...${NC}"
+if docker compose version &> /dev/null; then
+    docker compose up -d --build
+else
+    docker-compose up -d --build
+fi
 
-# 6. Финальная проверка
+# 6. Итог
 if [ $? -eq 0 ]; then
     IP=$(curl -s ifconfig.me)
     echo -e "${GREEN}==============================================${NC}"
-    echo -e "${GREEN}Установка успешно завершена!${NC}"
-    echo -e "Панель доступна по адресу: ${YELLOW}http://$IP:8081${NC}"
-    echo -e "Используйте логин/пароль от вашей панели 3x-ui."
+    echo -e "Установка завершена! Панель работает в фоне."
+    echo -e "Адрес: ${YELLOW}http://$IP:8081${NC}"
+    echo -e "Логин/Пароль: ваши данные от 3x-ui"
     echo -e "${GREEN}==============================================${NC}"
 else
-    echo -e "\033[0;31mПроизошла ошибка при запуске Docker-контейнера.\033[0m"
+    echo -e "${RED}Ошибка запуска. Проверьте логи командой: docker ps${NC}"
 fi
